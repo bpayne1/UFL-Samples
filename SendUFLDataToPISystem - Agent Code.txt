@@ -1,0 +1,43 @@
+//Copyright 2016-2017 OSIsoft, LLC
+//
+//Licensed under the Apache License, Version 2.0 (the "License");
+//you may not use this file except in compliance with the License.
+//You may obtain a copy of the License at
+//
+//<http://www.apache.org/licenses/LICENSE-2.0>
+//
+//Unless required by applicable law or agreed to in writing, software
+//distributed under the License is distributed on an "AS IS" BASIS,
+//WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//See the License for the specific language governing permissions and
+//limitations under the License.
+
+// ************************************************************************
+
+// Specify the address of the destination endpoint
+local target_url = "https://xxxxxx.cloudapp.net:5460/connectordata/dataFromImp/";
+
+// Specify the basic auth credentials needed to access this endpoint
+local _u = "xxxxx";
+local _p = "xxxxxxx";
+
+// ************************************************************************
+// Set up a handler to run the init and continuous functions on demand
+device.on("performInitTasks", function (device_name) {
+    server.log(device_name " initialized! Ready to send live values...");    
+});
+device.on("sendDataToPISystem", function (dataFromImp) {
+    try { 
+            // Assemble headers that contain the producer token and message type
+            local msg_header = {"Authorization" : "Basic " + http.base64encode(_u + ":" + _p)};
+            // Send the request, and collect the response
+            //*****ADD DATA HERE for Http Put request
+            local request = *******************
+            local response = request.sendsync();
+            // Print a debug message, if desired
+            server.log("Response from the '" + "data" + "' message: " + response.body);
+    } catch (e) {
+            // Log any error, if it occurs
+            server.log((date()) + " An error ocurred during web request: " + (e));	
+	}
+});

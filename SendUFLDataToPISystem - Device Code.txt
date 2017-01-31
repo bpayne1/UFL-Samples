@@ -1,0 +1,81 @@
+//Copyright 2016-2017 OSIsoft, LLC
+//
+//Licensed under the Apache License, Version 2.0 (the "License");
+//you may not use this file except in compliance with the License.
+//You may obtain a copy of the License at
+//
+//<http://www.apache.org/licenses/LICENSE-2.0>
+//
+//Unless required by applicable law or agreed to in writing, software
+//distributed under the License is distributed on an "AS IS" BASIS,
+//WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//See the License for the specific language governing permissions and
+//limitations under the License.
+
+// ************************************************************************
+
+// Specify the number of seconds to sleep in between value messages
+local number_of_seconds_between_value_messages = 5;
+
+// Configure GPIO pins as analog or digital inputs; see
+// https://electricimp.com/docs/api/hardware/pin/
+hardware.pin1.configure(ANALOG_IN);
+hardware.pin2.configure(ANALOG_IN);
+hardware.pin5.configure(ANALOG_IN);
+hardware.pin7.configure(ANALOG_IN);
+hardware.pin8.configure(ANALOG_IN);
+hardware.pin9.configure(ANALOG_IN);
+
+// This name will be automatically populated (or you can hard-code it); this is the name
+// of the PI AF Element that will be created, and it'll be included in the names
+// of PI Points that get created as well
+local device_name = hardware.getdeviceid();
+
+// Define the main program
+function main() {
+    // Instruct the agent to run the init code
+    agent.send("performInitTasks", device_name);
+
+    // Loop indefinitely, sending events conforming to the value type that we defined earlier
+    server.log("--- Next sending live data every " + number_of_seconds_between_value_messages + " second(s) for device " + device_name + "...");
+    while (1) {
+        // Wait for the sensors to initialize
+        imp.sleep(0.01);
+        
+        // Build a data object
+        // Include metadata and all analog readings
+        local dataFromImp = "ElectricImpData," + (
+            // Send the current UTC timestamp
+            ((1 + date().month) + "/" + date().day + "/" + date().year + " " + date().hour + ":" + date().min + ":" + date().sec) + "," + 
+            // Get the unique imp hardware ID
+            hardware.getdeviceid() + "," + 
+            // Gather general information about the Imp, including
+            // Wi=Fi network and connection information
+            imp.getsoftwareversion() + "," + 
+            imp.getbootromversion() + "," + 
+            imp.environment() + "," + 
+            "MyNetwork" + "," + //imp.getssid() + "," + 
+            imp.getmacaddress() + "," + 
+            imp.rssi() + "," + 
+            imp.getpowersave() + "," + 
+            imp.getmemoryfree() + "," + 
+            // Gather information about the hardware, including
+            // the built-in light sensor
+            hardware.lightlevel() + "," + 
+            hardware.voltage() + "," + 
+            // Gather readings from the GPIO pins
+            //
+            //*****ADD CODE HERE to Read data from pins
+            //
+        );
+    
+        // Instruct the agent to send the continuous stream of UFL messages
+        //*****ADD CODE HERE to send data to Agent   
+        
+        // Wait until the next send
+        imp.sleep(number_of_seconds_between_value_messages);
+    }
+}
+
+// Run the main function
+main();
