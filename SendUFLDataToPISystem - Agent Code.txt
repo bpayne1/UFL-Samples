@@ -31,8 +31,7 @@ device.on("sendDataToPISystem", function (dataFromImp) {
             // Assemble headers that contain the producer token and message type
             local msg_header = {"Authorization" : "Basic " + http.base64encode(_u + ":" + _p)};
             // Send the request, and collect the response
-            //*****ADD DATA HERE for Http Put request
-            local request = *******************
+            local request = http.put(target_url, msg_header, dataFromImp);
             local response = request.sendsync();
             // Print a debug message, if desired
             server.log("Response from the '" + "data" + "' message: " + response.body);
