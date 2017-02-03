@@ -64,13 +64,17 @@ function main() {
             hardware.lightlevel() + "," + 
             hardware.voltage() + "," + 
             // Gather readings from the GPIO pins
-            //
-            //*****ADD CODE HERE to Read data from pins
-            //
+            hardware.pin1.read() + "," + 
+            hardware.pin2.read() + "," + 
+            hardware.pin5.read() + "," + 
+            hardware.pin7.read() + "," + 
+            hardware.pin8.read() + "," + 
+            hardware.pin9.read()
+
         );
     
         // Instruct the agent to send the continuous stream of UFL messages
-        //*****ADD CODE HERE to send data to Agent   
+        agent.send("sendDataToPISystem", dataFromImp); 
         
         // Wait until the next send
         imp.sleep(number_of_seconds_between_value_messages);
