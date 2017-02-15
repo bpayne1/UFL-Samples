@@ -1,0 +1,81 @@
+
+const INTERVAL          = 20; // log temp data every n seconds
+
+// AF paths used when assembling a data packet
+const MY_AF_ATTRIBUTE_PATH_VOLTAGE      = @"\\piaf01\ExperimentalSensors\Imps\ElectricImp01|Voltage";
+const MY_AF_ATTRIBUTE_PATH_NETWORK      = @"\\piaf01\ExperimentalSensors\Imps\ElectricImp01|Network";
+const MY_AF_ATTRIBUTE_PATH_MAC          = @"\\piaf01\ExperimentalSensors\Imps\ElectricImp01|MAC";
+const MY_AF_ATTRIBUTE_PATH_MEMORY       = @"\\piaf01\ExperimentalSensors\Imps\ElectricImp01|MemoryFree";
+const MY_AF_ATTRIBUTE_PATH_SOFTWARE     = @"\\piaf01\ExperimentalSensors\Imps\ElectricImp01|SoftwareVersion";
+const MY_AF_ATTRIBUTE_PATH_TYPE         = @"\\piaf01\ExperimentalSensors\Imps\ElectricImp01|ImpType";
+const MY_AF_ATTRIBUTE_PATH_WIFISTRENGTH = @"\\piaf01\ExperimentalSensors\Imps\ElectricImp01|NetworkStrength";
+const MY_AF_ATTRIBUTE_PATH_ID           = @"\\piaf01\ExperimentalSensors\Imps\ElectricImp01|ID";
+const MY_AF_ATTRIBUTE_PATH_LIGHTLEVEL   = @"\\piaf01\ExperimentalSensors\Imps\ElectricImp01|LightLevel";
+const MY_AF_ATTRIBUTE_PATH_POWERSAVE    = @"\\piaf01\ExperimentalSensors\Imps\ElectricImp01|PowerSave";
+const MY_AF_ATTRIBUTE_PATH_SENSOR       = @"\\piaf01\ExperimentalSensors\Imps\ElectricImp01|SoundLevel";
+const MY_AF_ATTRIBUTE_PATH_LATITUDE  = @"\\piaf01\ExperimentalSensors\Imps\ElectricImp01|Latitude";
+const MY_AF_ATTRIBUTE_PATH_LONGITUDE = @"\\piaf01\ExperimentalSensors\Imps\ElectricImp01|Longitude";
+
+local MY_AF_ATTRIBUTE_ARRAY = [
+        MY_AF_ATTRIBUTE_PATH_VOLTAGE, 
+        MY_AF_ATTRIBUTE_PATH_NETWORK, 
+        MY_AF_ATTRIBUTE_PATH_MAC,
+        MY_AF_ATTRIBUTE_PATH_MEMORY, 
+        MY_AF_ATTRIBUTE_PATH_SOFTWARE, 
+        MY_AF_ATTRIBUTE_PATH_TYPE, 
+        MY_AF_ATTRIBUTE_PATH_WIFISTRENGTH, 
+        MY_AF_ATTRIBUTE_PATH_ID, 
+        MY_AF_ATTRIBUTE_PATH_LIGHTLEVEL, 
+        MY_AF_ATTRIBUTE_PATH_POWERSAVE, 
+        MY_AF_ATTRIBUTE_PATH_SENSOR,
+        MY_AF_ATTRIBUTE_PATH_LATITUDE,
+        MY_AF_ATTRIBUTE_PATH_LONGITUDE
+    ];
+/* =======================================================*/
+
+// Main program
+function main() {
+    
+    // Every INTERVAL seconds, re-run the main function
+    imp.wakeup(INTERVAL, main);
+    
+    // Wait for the sensors to initialize
+    imp.sleep(0.01);
+
+    // Send the data in bulk as an array of arrays, where each minor array is of the form [attribute path, value]
+    agent.send("sendAFPathAndValueToCloudInBulk", [
+        [MY_AF_ATTRIBUTE_PATH_VOLTAGE, hardware.voltage()],
+        [MY_AF_ATTRIBUTE_PATH_NETWORK, imp.getssid()],
+        [MY_AF_ATTRIBUTE_PATH_MAC, imp.getmacaddress()],
+        [MY_AF_ATTRIBUTE_PATH_MEMORY, imp.getmemoryfree()],
+        [MY_AF_ATTRIBUTE_PATH_SOFTWARE, imp.getsoftwareversion()],
+        [MY_AF_ATTRIBUTE_PATH_TYPE, imp.environment()],
+        [MY_AF_ATTRIBUTE_PATH_WIFISTRENGTH, imp.rssi()],
+        [MY_AF_ATTRIBUTE_PATH_ID, hardware.getdeviceid()],
+        [MY_AF_ATTRIBUTE_PATH_LIGHTLEVEL, hardware.lightlevel()],
+        [MY_AF_ATTRIBUTE_PATH_POWERSAVE, imp.getpowersave()],
+        [MY_AF_ATTRIBUTE_PATH_SENSOR, SENSOR_PIN.read()],
+    ]);
+}
+
+/* =======================================================*/
+
+// Turn on power saving
+imp.setpowersave(true); 
+
+// Set up monitoring pins
+SENSOR_PIN <- hardware.pin9;
+SENSOR_PIN.configure(ANALOG_IN);
+
+// When the agent sends the Imp a command to "scanForWifiNetworks", the imp will send back the list of wifi networks
+agent.on("scanForWifiNetworks", function(topic) {
+    agent.send(topic, imp.scanwifinetworks())
+});
+
+// When the imp starts up, command the agent to look up all of the WebId values for each AF attribute
+// This will greatly speed up future writes to the PI Server
+agent.send("GetWebIDsForAFAttributes", MY_AF_ATTRIBUTE_ARRAY);
+
+// Start the main program
+main();
+
