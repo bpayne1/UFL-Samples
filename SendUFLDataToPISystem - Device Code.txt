@@ -1,4 +1,4 @@
-//Copyright 2016-2017 OSIsoft, LLC
+//Copyright 2016 OSIsoft, LLC
 //
 //Licensed under the Apache License, Version 2.0 (the "License");
 //you may not use this file except in compliance with the License.
@@ -14,9 +14,32 @@
 
 // ************************************************************************
 
+// For sensor reading guidelines, see https://electricimp.com/docs/gettingstarted/explorer/libraries/
+#require "HTS221.class.nut:1.0.0"
+#require "LPS22HB.class.nut:1.0.0"
+#require "LIS3DH.class.nut:1.3.0"
+
+// Declare global variables to hold dev board sensor values
+tempSensor <- null;
+pressureSensor <- null;
+led <- null
+
+// Configure I2C bus for sensors
+local i2c = hardware.i2c89;
+i2c.configure(CLOCK_SPEED_400_KHZ);
+tempSensor = HTS221(i2c);
+tempSensor.setMode(HTS221_MODE.ONE_SHOT);
+pressureSensor = LPS22HB(i2c);
+pressureSensor.softReset();
+// Use a non-default accelerometer I2C address (SA0 pulled high)
+accel <- LIS3DH(i2c, 0x32);
+accel.init();
+local rate = accel.setDataRate(90);
+
 // Specify the number of seconds to sleep in between value messages
 local number_of_seconds_between_value_messages = 5;
 
+/*
 // Configure GPIO pins as analog or digital inputs; see
 // https://electricimp.com/docs/api/hardware/pin/
 hardware.pin1.configure(ANALOG_IN);
@@ -25,6 +48,7 @@ hardware.pin5.configure(ANALOG_IN);
 hardware.pin7.configure(ANALOG_IN);
 hardware.pin8.configure(ANALOG_IN);
 hardware.pin9.configure(ANALOG_IN);
+*/
 
 // This name will be automatically populated (or you can hard-code it); this is the name
 // of the PI AF Element that will be created, and it'll be included in the names
@@ -63,18 +87,17 @@ function main() {
             // the built-in light sensor
             hardware.lightlevel() + "," + 
             hardware.voltage() + "," + 
-            // Gather readings from the GPIO pins
-            hardware.pin1.read() + "," + 
-            hardware.pin2.read() + "," + 
-            hardware.pin5.read() + "," + 
-            hardware.pin7.read() + "," + 
-            hardware.pin8.read() + "," + 
-            hardware.pin9.read()
-
+            // Get readings from the dev board sensors
+            (tempSensor.read().temperature * 9/5 + 32) + "," +   // F
+            tempSensor.read().humidity + "," +      // %
+            pressureSensor.read().pressure + "," +  // hectopascal
+            accel.getAccel().x + "," +  // G
+            accel.getAccel().y + "," +  // G
+            accel.getAccel().z  // G
         );
     
-        // Instruct the agent to send the continuous stream of UFL messages
-        agent.send("sendDataToPISystem", dataFromImp); 
+        // Instruct the agent to send the continuous stream of OMF messages
+        agent.send("sendDataToPISystem", dataFromImp);    
         
         // Wait until the next send
         imp.sleep(number_of_seconds_between_value_messages);
